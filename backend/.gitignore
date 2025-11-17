@@ -1,0 +1,62 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/bin/
+/dist/
+
+# Go specific
+go.work
+go.work.sum
+vendor/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.json
+.md
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Build artifacts
+/build/
+/out/
+
+# Coverage
+coverage.out
+coverage.html
+
+# Air (live reload)
+tmp/
+
+# Test files
+*_test.go.bak
+
