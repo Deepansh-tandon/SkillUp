@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"skillup-backend/db"
 	"skillup-backend/services"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -67,6 +68,79 @@ func UploadDocument(c *gin.Context) {
 func GetDocuments(c *gin.Context) {
 	userId := c.GetString("user_id")
 	var docs []db.Document
-	db.DB.Where("user_id = ?", userId).Find(&docs)
+	db.DB.Where("user_id = ?", userId).Order("upload_date desc").Find(&docs)
 	c.JSON(http.StatusOK, docs)
+}
+
+// GetDocument retrieves a single document with summary
+func GetDocument(c *gin.Context) {
+	userId := c.GetString("user_id")
+	documentId := c.Param("document_id")
+
+	var doc db.Document
+	if err := db.DB.Where("id = ? AND user_id = ?", documentId, userId).First(&doc).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "document not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, doc)
+}
+
+// SummarizeDocument generates a summary for a document
+func SummarizeDocument(c *gin.Context) {
+	userId := c.GetString("user_id")
+	documentId := c.Param("document_id")
+
+	// Parse options from body (optional)
+	var options services.SummaryOptions
+	if err := c.BindJSON(&options); err != nil {
+		// Use defaults if no body provided
+		options = services.SummaryOptions{
+			Length: "medium",
+			Style:  "paragraph",
+		}
+	}
+
+	// Fetch document
+	var doc db.Document
+	if err := db.DB.Where("id = ? AND user_id = ?", documentId, userId).First(&doc).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "document not found"})
+		return
+	}
+
+	// Check if document is processed
+	if doc.ProcessingStatus != "processed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "document is not yet processed"})
+		return
+	}
+
+	// Fetch document text
+	var docRaw db.DocumentRaw
+	if err := db.DB.Where("document_id = ?", documentId).First(&docRaw).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "document text not found"})
+		return
+	}
+
+	// Generate summary using LLM
+	summary, err := services.SummarizeDocument(docRaw.Text, options)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate summary: " + err.Error()})
+		return
+	}
+
+	// Update document with summary
+	now := time.Now()
+	doc.Summary = summary
+	doc.SummaryGeneratedAt = &now
+
+	if err := db.DB.Save(&doc).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save summary"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"summary":     summary,
+		"document_id": documentId,
+		"generated_at": now,
+	})
 }

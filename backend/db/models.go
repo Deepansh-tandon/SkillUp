@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pgvector/pgvector-go"
+	"gorm.io/datatypes"
 )
 
 // Users
@@ -17,12 +18,14 @@ type User struct {
 
 // Goals
 type Goal struct {
-	ID         string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	UserID     string    `gorm:"index;not null"`
-	Title      string    `gorm:"not null"`
-	TargetDate *time.Time
-	Status     string    `gorm:"type:text;check:status IN ('active','completed')"`
-	CreatedAt  time.Time `gorm:"autoCreateTime"`
+	ID              string     `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	UserID          string     `gorm:"index;not null"`
+	Title           string     `gorm:"not null"`
+	TargetDate      *time.Time
+	Status          string     `gorm:"type:text;check:status IN ('active','completed')"`
+	AIPlan          string     `gorm:"type:jsonb"` // AI-generated study plan (future)
+	PlanGeneratedAt *time.Time // When plan was generated
+	CreatedAt       time.Time  `gorm:"autoCreateTime"`
 }
 
 // Topics (hierarchical)
@@ -39,12 +42,14 @@ type Topic struct {
 
 // Documents
 type Document struct {
-	ID               string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	UserID           string    `gorm:"index;not null"`
-	Filename         string    `gorm:"size:255;not null"`
-	FilePath         string    `gorm:"size:500"` // if we later add S3
-	ProcessingStatus string    `gorm:"type:varchar(20);default:'uploaded';check:processing_status IN ('uploaded','processed','failed')"`
-	UploadDate       time.Time `gorm:"autoCreateTime"`
+	ID                 string     `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	UserID             string     `gorm:"index;not null"`
+	Filename           string     `gorm:"size:255;not null"`
+	FilePath           string     `gorm:"size:500"` // if we later add S3
+	ProcessingStatus   string     `gorm:"type:varchar(20);default:'uploaded';check:processing_status IN ('uploaded','processed','failed')"`
+	Summary            string     `gorm:"type:text"` // AI-generated summary
+	SummaryGeneratedAt *time.Time // When summary was generated
+	UploadDate         time.Time  `gorm:"autoCreateTime"`
 }
 
 // Raw full-text extracted from document (optional)
@@ -68,15 +73,16 @@ type DocumentChunk struct {
 
 // Quizzes
 type Quiz struct {
-	ID             string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	UserID         string    `gorm:"index;not null"`
-	TopicID        *string   `gorm:"index"`
-	QuizType       string    `gorm:"type:varchar(20);check:quiz_type IN ('topic','weekly','goal')"`
-	Questions      string    `gorm:"type:jsonb"` // stored as JSON
-	Score          float64
-	TotalQuestions int
-	AttemptedAt    *time.Time
-	CreatedAt      time.Time `gorm:"autoCreateTime"`
+	ID             string         `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	UserID         string         `gorm:"index;not null"`
+	DocumentID     string         `gorm:"index;not null"`
+	Questions      datatypes.JSON `gorm:"type:jsonb;not null"` // LLM-generated questions
+	Score          *float64       // NULL until submitted
+	TotalQuestions int            `gorm:"not null"`
+	UserAnswers    datatypes.JSON `gorm:"type:jsonb"` // User's submitted answers
+	Status         string         `gorm:"type:varchar(20);default:'generated';check:status IN ('generated','in_progress','submitted')"`
+	AttemptedAt    *time.Time     // Set when user submits
+	CreatedAt      time.Time      `gorm:"autoCreateTime"`
 }
 
 // Study activity log

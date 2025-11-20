@@ -15,25 +15,30 @@ func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api")
 	api.Use(middleware.AuthMiddleware())
 
-	// goals & topics
+	// Goals
 	api.GET("/goals", controllers.GetGoals)
 	api.POST("/goals", controllers.CreateGoal)
 
-	api.GET("/topics", controllers.GetTopics)
-	api.POST("/topics", controllers.CreateTopic)
-
-	// tasks -> handled as study activities or topics/tasks inside frontend; we keep activity endpoints
-	api.POST("/activity", controllers.CreateActivity)
-	api.GET("/activity", controllers.GetActivity)
-
-	// documents & PDF ingestion
+	// Documents & PDF ingestion
 	api.POST("/documents/upload", controllers.UploadDocument)
 	api.GET("/documents", controllers.GetDocuments)
+	api.GET("/documents/:document_id", controllers.GetDocument)
+	api.POST("/documents/:document_id/summarize", controllers.SummarizeDocument)
 
-	// chat (RAG)
+	// Chat (RAG)
 	api.POST("/chat/query", controllers.ChatQuery)
 
-	// quizzes
-	api.POST("/quizzes", controllers.CreateQuiz)
+	// Quizzes (NEW - document-based)
+	api.POST("/quizzes/generate/:document_id", controllers.GenerateQuiz)
+	api.GET("/quizzes/:quiz_id", controllers.GetQuiz)
+	api.POST("/quizzes/:quiz_id/submit", controllers.SubmitQuiz)
+	api.GET("/quizzes/document/:document_id", controllers.GetDocumentQuizzes)
 	api.GET("/quizzes", controllers.GetQuizzes)
+
+	// DEPRECATED ROUTES (keep for backward compatibility, but mark as legacy)
+	// These routes are kept but should not be enhanced
+	api.GET("/topics", controllers.GetTopics)           // DEPRECATED
+	api.POST("/topics", controllers.CreateTopic)        // DEPRECATED
+	api.POST("/activity", controllers.CreateActivity)   // DEPRECATED
+	api.GET("/activity", controllers.GetActivity)       // DEPRECATED
 }
