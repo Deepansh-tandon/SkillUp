@@ -42,6 +42,7 @@ func UploadDocument(c *gin.Context) {
 		DocumentID: doc.ID,
 		UserID:     userId,
 		Text:       text,
+		FileData:   data, // Store original PDF
 	}
 	db.DB.Create(&raw)
 
@@ -143,4 +144,32 @@ func SummarizeDocument(c *gin.Context) {
 		"document_id": documentId,
 		"generated_at": now,
 	})
+}
+
+// GetDocumentFile serves the original PDF file
+func GetDocumentFile(c *gin.Context) {
+	userId := c.GetString("user_id")
+	documentId := c.Param("document_id")
+
+	// Verify document belongs to user
+	var doc db.Document
+	if err := db.DB.Where("id = ? AND user_id = ?", documentId, userId).First(&doc).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "document not found"})
+		return
+	}
+
+	// Fetch document file data
+	var docRaw db.DocumentRaw
+	if err := db.DB.Where("document_id = ?", documentId).First(&docRaw).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "document file not found"})
+		return
+	}
+
+	if len(docRaw.FileData) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "document file data not available"})
+		return
+	}
+
+	// Serve the PDF file
+	c.Data(http.StatusOK, "application/pdf", docRaw.FileData)
 }

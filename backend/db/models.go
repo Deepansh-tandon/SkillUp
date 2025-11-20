@@ -58,6 +58,7 @@ type DocumentRaw struct {
 	DocumentID string    `gorm:"index;not null"`
 	UserID     string    `gorm:"index;not null"`
 	Text       string    `gorm:"type:text;not null"`
+	FileData   []byte    `gorm:"type:bytea"` // Store original PDF file
 	CreatedAt  time.Time `gorm:"autoCreateTime"`
 }
 

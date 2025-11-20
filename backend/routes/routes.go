@@ -23,6 +23,7 @@ func SetupRoutes(r *gin.Engine) {
 	api.POST("/documents/upload", controllers.UploadDocument)
 	api.GET("/documents", controllers.GetDocuments)
 	api.GET("/documents/:document_id", controllers.GetDocument)
+	api.GET("/documents/:document_id/file", controllers.GetDocumentFile)
 	api.POST("/documents/:document_id/summarize", controllers.SummarizeDocument)
 
 	// Chat (RAG)
