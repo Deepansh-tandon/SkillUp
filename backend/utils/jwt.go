@@ -17,7 +17,7 @@ func GenerateJWT(id string) (string, error) {
 	claims := &Claims{
 		ID: id,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(60 * 24 * time.Hour)), // 60 days
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}

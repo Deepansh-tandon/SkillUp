@@ -23,7 +23,7 @@ type Goal struct {
 	Title           string     `gorm:"not null"`
 	TargetDate      *time.Time
 	Status          string     `gorm:"type:text;check:status IN ('active','completed')"`
-	AIPlan          string     `gorm:"type:jsonb"` // AI-generated study plan (future)
+	AIPlan          *string    `gorm:"type:jsonb"` // AI-generated study plan (future)
 	PlanGeneratedAt *time.Time // When plan was generated
 	CreatedAt       time.Time  `gorm:"autoCreateTime"`
 }

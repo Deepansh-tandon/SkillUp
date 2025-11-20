@@ -34,6 +34,11 @@ func CreateGoal(c *gin.Context) {
 		TargetDate: body.TargetDate,
 		Status:     body.Status,
 	}
-	db.DB.Create(&goal)
+	
+	if err := db.DB.Create(&goal).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create goal"})
+		return
+	}
+	
 	c.JSON(http.StatusOK, goal)
 }
